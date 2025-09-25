@@ -122,6 +122,37 @@ app.post('/pix/qrcode', async (req, res) => {
   }
 });
 
+// ========== Confirmação de sessão (Stripe) ==========
+// GET /checkout-session/:id -> retorna o status real da sessão do Checkout
+app.get('/checkout-session/:id', async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(503).json({ error: 'Stripe não configurado' });
+    }
+
+    const { id } = req.params;
+    // valida um id do tipo cs_*******
+    if (!/^cs_[A-Za-z0-9]+$/.test(id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(id, {
+      expand: ['payment_intent']
+    });
+
+    return res.json({
+      payment_status: session.payment_status,        // 'paid' quando OK
+      amount_total: session.amount_total,           // em centavos
+      currency: session.currency,                   // 'brl'
+      payment_intent_status: session.payment_intent?.status // e.g. 'succeeded'/'processing'
+    });
+  } catch (e) {
+    console.error('Falha ao consultar sessão:', e?.message || e);
+    return res.status(500).json({ error: 'Falha ao consultar sessão' });
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`✅ API + Front em http://localhost:${PORT}`);
 });
