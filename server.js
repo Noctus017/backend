@@ -67,9 +67,13 @@ app.post('/create-checkout-session', async (req, res) => {
       payment_method_options.pix = { expires_after_seconds: 1800 };
     }
 
-    const base = getReturnBase(req, returnBase); // <- agora deve ser http://localhost:4242
-    const successUrl = `${base}/sucesso.html?v=${encodeURIComponent(amount.toFixed(2))}`;
+ // onde cria a session do Stripe:
+      
+    const base = getReturnBase(req, returnBase);
+    const successUrl = `${base}/sucesso.html?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl  = `${base}/cancelado.html`;
+
+// ... checkout.sessions.create({ ..., success_url: successUrl, cancel_url: cancelUrl })
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
